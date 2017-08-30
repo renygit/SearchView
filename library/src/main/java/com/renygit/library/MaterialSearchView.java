@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -13,13 +12,12 @@ import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.speech.RecognizerIntent;
+import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -27,17 +25,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.Filter;
-import android.widget.Filterable;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.ListAdapter;
-import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
 
 import com.renygit.library.utils.AnimationUtil;
 
@@ -58,7 +51,7 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
     //Views
     private View mSearchLayout;
     private View mTintView;
-    private ListView mSuggestionsListView;
+    private RecyclerView mSuggestionsRecyclerView;
     private EditText mSearchSrcTextView;
     private ImageButton mBackBtn;
     private ImageButton mVoiceBtn;
@@ -71,7 +64,7 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
     private OnQueryTextListener mOnQueryChangeListener;
     private SearchViewListener mSearchViewListener;
 
-    private ListAdapter mAdapter;
+    private RecyclerView.Adapter mAdapter;
 
     private SavedState mSavedState;
     private boolean submit = false;
@@ -106,7 +99,7 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
 
         if (a != null) {
             if (a.hasValue(R.styleable.MaterialSearchView_searchHeight)){
-                setSearchBarHeight(a.getDimension(R.styleable.MaterialSearchView_searchHeight, 80));
+                setSearchBarHeight(a.getDimension(R.styleable.MaterialSearchView_searchHeight, 60));
             }
 
             if (a.hasValue(R.styleable.MaterialSearchView_searchBackground)) {
@@ -158,7 +151,7 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
         mSearchLayout = findViewById(R.id.search_layout);
 
         mSearchTopBar = (RelativeLayout) mSearchLayout.findViewById(R.id.search_top_bar);
-        mSuggestionsListView = (ListView) mSearchLayout.findViewById(R.id.suggestion_list);
+        mSuggestionsRecyclerView = (RecyclerView) mSearchLayout.findViewById(R.id.suggestion_list);
         mSearchSrcTextView = (EditText) mSearchLayout.findViewById(R.id.searchTextView);
         mBackBtn = (ImageButton) mSearchLayout.findViewById(R.id.action_up_btn);
         mVoiceBtn = (ImageButton) mSearchLayout.findViewById(R.id.action_voice_btn);
@@ -177,7 +170,7 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
 
         initSearchView();
 
-        mSuggestionsListView.setVisibility(GONE);
+        mSuggestionsRecyclerView.setVisibility(GONE);
         setAnimationDuration(AnimationUtil.ANIMATION_DURATION_MEDIUM);
     }
 
@@ -199,7 +192,6 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 mUserQuery = s;
-                startFilter(s);
                 MaterialSearchView.this.onTextChanged(s);
             }
 
@@ -218,12 +210,6 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
                 }
             }
         });
-    }
-
-    private void startFilter(CharSequence s) {
-        if (mAdapter != null && mAdapter instanceof Filterable) {
-            ((Filterable) mAdapter).getFilter().filter(s, MaterialSearchView.this);
-        }
     }
 
     private final OnClickListener mOnClickListener = new OnClickListener() {
@@ -309,7 +295,7 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
 
     public void setSearchBarHeight(float dp){
         ViewGroup.LayoutParams lp = mSearchTopBar.getLayoutParams();
-        lp.height = (int)dp2px(getContext(), dp);
+        lp.height = (int)dp;
         mSearchTopBar.setLayoutParams(lp);
     }
 
@@ -361,9 +347,9 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
 
     public void setSuggestionBackground(Drawable background) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            mSuggestionsListView.setBackground(background);
+            mSuggestionsRecyclerView.setBackground(background);
         } else {
-            mSuggestionsListView.setBackgroundDrawable(background);
+            mSuggestionsRecyclerView.setBackgroundDrawable(background);
         }
     }
 
@@ -385,11 +371,11 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
     //Public Methods
 
     /**
-     * Call this method to show suggestions list. This shows up when adapter is set. Call {@link #setAdapter(ListAdapter)} before calling this.
+     * Call this method to show suggestions list. This shows up when adapter is set. Call {@link #setAdapter(RecyclerView.Adapter)} before calling this.
      */
     public void showSuggestions() {
-        if (mAdapter != null && mAdapter.getCount() > 0 && mSuggestionsListView.getVisibility() == GONE) {
-            mSuggestionsListView.setVisibility(VISIBLE);
+        if (mAdapter != null && mAdapter.getItemCount() > 0 && mSuggestionsRecyclerView.getVisibility() == GONE) {
+            mSuggestionsRecyclerView.setVisibility(VISIBLE);
         }
     }
 
@@ -403,53 +389,25 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
     }
 
     /**
-     * Set Suggest List OnItemClickListener
-     *
-     * @param listener
-     */
-    public void setOnItemClickListener(AdapterView.OnItemClickListener listener) {
-        mSuggestionsListView.setOnItemClickListener(listener);
-    }
-
-    /**
      * Set Adapter for suggestions list. Should implement Filterable.
      *
      * @param adapter
      */
-    public void setAdapter(ListAdapter adapter) {
+    public void setAdapter(RecyclerView.Adapter adapter) {
         mAdapter = adapter;
-        mSuggestionsListView.setAdapter(adapter);
-        startFilter(mSearchSrcTextView.getText());
+        mSuggestionsRecyclerView.setAdapter(mAdapter);
     }
 
-    /**
-     * Set Adapter for suggestions list with the given suggestion array
-     *
-     * @param suggestions array of suggestions
-     */
-    public void setSuggestions(String[] suggestions) {
-        if (suggestions != null && suggestions.length > 0) {
-            mTintView.setVisibility(VISIBLE);
-            final SearchAdapter adapter = new SearchAdapter(mContext, suggestions, suggestionIcon, ellipsize);
-            setAdapter(adapter);
-
-            setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    setQuery((String) adapter.getItem(position), submit);
-                }
-            });
-        } else {
-            mTintView.setVisibility(GONE);
-        }
+    public RecyclerView getRecyclerView(){
+        return mSuggestionsRecyclerView;
     }
 
     /**
      * Dismiss the suggestions list.
      */
     public void dismissSuggestions() {
-        if (mSuggestionsListView.getVisibility() == VISIBLE) {
-            mSuggestionsListView.setVisibility(GONE);
+        if (mSuggestionsRecyclerView.getVisibility() == VISIBLE) {
+            mSuggestionsRecyclerView.setVisibility(GONE);
         }
     }
 
@@ -746,21 +704,6 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
         void onSearchViewShown();
 
         void onSearchViewClosed();
-    }
-
-
-
-    public float dp2px(Context context, float dpValue) {
-        Resources mResources;
-        if (context == null) {
-            mResources = Resources.getSystem();
-        } else {
-            mResources = context.getResources();
-        }
-        //DisplayMetrics{density=1.5, width=480, height=854, scaledDensity=1.5, xdpi=160.421, ydpi=159.497}
-        //DisplayMetrics{density=2.0, width=720, height=1280, scaledDensity=2.0, xdpi=160.42105, ydpi=160.15764}
-        DisplayMetrics mDisplayMetrics = mResources.getDisplayMetrics();
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpValue, mDisplayMetrics);
     }
 
 }

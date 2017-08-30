@@ -62,11 +62,10 @@
         </RelativeLayout>
 
 
-        <ListView
+        <android.support.v7.widget.RecyclerView
             android:id="@+id/suggestion_list"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/white"
-            android:divider="@android:color/transparent" />
+            android:background="@android:color/white" />
     </LinearLayout>
 </FrameLayout>
