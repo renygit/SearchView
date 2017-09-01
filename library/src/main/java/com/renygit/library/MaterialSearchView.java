@@ -146,7 +146,8 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
     }
 
     private void initiateView() {
-        mSearchLayout = LayoutInflater.from(mContext).inflate(R.layout.search_view, this, true);
+        LayoutInflater.from(mContext).inflate(R.layout.search_view, this, true);
+        mSearchLayout = findViewById(R.id.rootView);
 
         mSearchTopBar = mSearchLayout.findViewById(R.id.search_top_bar);
         mSuggestionsRecyclerView = (RecyclerView) mSearchLayout.findViewById(R.id.suggestion_list);
