@@ -50,13 +50,12 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
 
     //Views
     private View mSearchLayout;
-    private View mTintView;
     private RecyclerView mSuggestionsRecyclerView;
     private EditText mSearchSrcTextView;
     private ImageButton mBackBtn;
     private ImageButton mVoiceBtn;
     private ImageButton mEmptyBtn;
-    private RelativeLayout mSearchTopBar;
+    private View mSearchTopBar;
 
     private CharSequence mOldQueryText;
     private CharSequence mUserQuery;
@@ -147,22 +146,19 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
     }
 
     private void initiateView() {
-        LayoutInflater.from(mContext).inflate(R.layout.search_view, this, true);
-        mSearchLayout = findViewById(R.id.search_layout);
+        mSearchLayout = LayoutInflater.from(mContext).inflate(R.layout.search_view, this, true);
 
-        mSearchTopBar = (RelativeLayout) mSearchLayout.findViewById(R.id.search_top_bar);
+        mSearchTopBar = mSearchLayout.findViewById(R.id.search_top_bar);
         mSuggestionsRecyclerView = (RecyclerView) mSearchLayout.findViewById(R.id.suggestion_list);
         mSearchSrcTextView = (EditText) mSearchLayout.findViewById(R.id.searchTextView);
         mBackBtn = (ImageButton) mSearchLayout.findViewById(R.id.action_up_btn);
         mVoiceBtn = (ImageButton) mSearchLayout.findViewById(R.id.action_voice_btn);
         mEmptyBtn = (ImageButton) mSearchLayout.findViewById(R.id.action_empty_btn);
-        mTintView = mSearchLayout.findViewById(R.id.transparent_view);
 
         mSearchSrcTextView.setOnClickListener(mOnClickListener);
         mBackBtn.setOnClickListener(mOnClickListener);
         mVoiceBtn.setOnClickListener(mOnClickListener);
         mEmptyBtn.setOnClickListener(mOnClickListener);
-        mTintView.setOnClickListener(mOnClickListener);
 
         allowVoiceSearch = false;
 
@@ -223,8 +219,6 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
                 mSearchSrcTextView.setText(null);
             } else if (v == mSearchSrcTextView) {
                 showSuggestions();
-            } else if (v == mTintView) {
-                closeSearch();
             }
         }
     };
@@ -390,7 +384,7 @@ public class MaterialSearchView extends FrameLayout implements Filter.FilterList
 
     /**
      * Set Adapter for suggestions list. Should implement Filterable.
-     *
+     * need set LayoutManager
      * @param adapter
      */
     public void setAdapter(RecyclerView.Adapter adapter) {
